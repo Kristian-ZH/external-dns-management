@@ -8,13 +8,12 @@ type RecordNS struct {
 	Nameserver string           `json:"nameserver,omitempty"`
 	View       string           `json:"view,omitempty"`
 	Zone       string           `json:"zone,omitempty"`
-	Ea         EA               `json:"extattrs,omitempty"`
 }
 
 func NewRecordNS(rc RecordNS) *RecordNS {
 	res := rc
 	res.objectType = "record:ns"
-	res.returnFields = []string{"extattrs", "addresses", "name", "nameserver", "view", "zone"}
+	res.returnFields = []string{"addresses", "name", "nameserver", "view", "zone"}
 
 	return &res
 }

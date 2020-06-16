@@ -46,6 +46,6 @@ require (
 //gopkg.in/fsnotify.v1 v1.4.7 => github.com/fsnotify/fsnotify v1.4.7
 replace (
 	github.com/gardener/controller-manager-library => ../controller-manager-library
-	github.com/infobloxopen/infoblox-go-client => github.com/MartinWeindel/infoblox-go-client v1.1.1-0.20200616135914-3392468f1fac
+	github.com/infobloxopen/infoblox-go-client => github.com/MartinWeindel/infoblox-go-client v1.1.1-0.20200616154106-b2951ec7a129
 	k8s.io/apimachinery => k8s.io/apimachinery v0.16.4
 )

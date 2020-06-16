@@ -52,7 +52,7 @@ func (this *access) CreateRecord(r raw.Record) error {
 
 func (this *access) UpdateRecord(r raw.Record) error {
 	this.metrics.AddRequests(provider.M_CREATERECORDS, 1)
-	_, err := this.UpdateObject(r.(ibclient.IBObject), r.GetId())
+	_, err := this.UpdateObject(r.(Record).PrepareUpdate().(ibclient.IBObject), r.GetId())
 	return err
 }
 
@@ -65,29 +65,29 @@ func (this *access) DeleteRecord(r raw.Record) error {
 func (this *access) NewRecord(fqdn string, rtype string, value string, zone provider.DNSHostedZone, ttl int64) raw.Record {
 	switch rtype {
 	case dns.RS_A:
-		return &ibclient.RecordA{
+		return (*RecordA)(ibclient.NewRecordA(ibclient.RecordA{
 			Name:     fqdn,
 			Ipv4Addr: value,
-			Zone:     zone.Key(),
-			View:     this.view,
-		}
+			//Zone:     zone.Key(),
+			View: this.view,
+		}))
 	case dns.RS_CNAME:
-		return &ibclient.RecordCNAME{
+		return (*RecordCNAME)(ibclient.NewRecordCNAME(ibclient.RecordCNAME{
 			Name:      fqdn,
 			Canonical: value,
-			Zone:      zone.Key(),
-			View:      this.view,
-		}
+			//Zone:      zone.Key(),
+			View: this.view,
+		}))
 	case dns.RS_TXT:
 		if n, err := strconv.Unquote(value); err == nil && !strings.Contains(value, " ") {
 			value = n
 		}
-		return &RecordTXT{
+		return (*RecordTXT)(ibclient.NewRecordTXT(ibclient.RecordTXT{
 			Name: fqdn,
 			Text: value,
-			Zone: zone.Key(),
+			//Zone: zone.Key(),
 			View: this.view,
-		}
+		}))
 	}
 	return nil
 }

@@ -24,6 +24,11 @@ import (
 	"github.com/gardener/external-dns-management/pkg/dns/provider/raw"
 )
 
+type Record interface {
+	raw.Record
+	PrepareUpdate() raw.Record
+}
+
 type RecordA ibclient.RecordA
 
 func (r *RecordA) GetType() string    { return dns.RS_A }
@@ -31,28 +36,38 @@ func (r *RecordA) GetId() string      { return r.Ref }
 func (r *RecordA) GetDNSName() string { return r.Name }
 func (r *RecordA) GetValue() string   { return r.Ipv4Addr }
 func (r *RecordA) GetTTL() int        { return int(r.Ttl) }
-func (r *RecordA) SetTTL(ttl int)     { r.Ttl = uint(ttl) }
+func (r *RecordA) SetTTL(ttl int)     { r.Ttl = uint(ttl); r.UseTtl = ttl != 0 }
 func (r *RecordA) Copy() raw.Record   { n := *r; return &n }
+func (r *RecordA) PrepareUpdate() raw.Record {
+	n := *r
+	n.Zone = ""
+	n.CreationTime = 0
+	n.DnsName = ""
+	n.View = ""
+	return &n
+}
 
 type RecordCNAME ibclient.RecordCNAME
 
-func (r *RecordCNAME) GetType() string    { return dns.RS_CNAME }
-func (r *RecordCNAME) GetId() string      { return r.Ref }
-func (r *RecordCNAME) GetDNSName() string { return r.Name }
-func (r *RecordCNAME) GetValue() string   { return r.Canonical }
-func (r *RecordCNAME) GetTTL() int        { return int(r.Ttl) }
-func (r *RecordCNAME) SetTTL(ttl int)     { r.Ttl = ttl }
-func (r *RecordCNAME) Copy() raw.Record   { n := *r; return &n }
+func (r *RecordCNAME) GetType() string           { return dns.RS_CNAME }
+func (r *RecordCNAME) GetId() string             { return r.Ref }
+func (r *RecordCNAME) GetDNSName() string        { return r.Name }
+func (r *RecordCNAME) GetValue() string          { return r.Canonical }
+func (r *RecordCNAME) GetTTL() int               { return int(r.Ttl) }
+func (r *RecordCNAME) SetTTL(ttl int)            { r.Ttl = uint(ttl); r.UseTtl = ttl != 0 }
+func (r *RecordCNAME) Copy() raw.Record          { n := *r; return &n }
+func (r *RecordCNAME) PrepareUpdate() raw.Record { n := *r; n.Zone = ""; n.View = ""; return &n }
 
 type RecordTXT ibclient.RecordTXT
 
-func (r *RecordTXT) GetType() string    { return dns.RS_TXT }
-func (r *RecordTXT) GetId() string      { return r.Ref }
-func (r *RecordTXT) GetDNSName() string { return r.Name }
-func (r *RecordTXT) GetValue() string   { return raw.EnsureQuotedText(r.Text) }
-func (r *RecordTXT) GetTTL() int        { return int(r.Ttl) }
-func (r *RecordTXT) SetTTL(ttl int)     { r.Ttl = uint(ttl) }
-func (r *RecordTXT) Copy() raw.Record   { n := *r; return &n }
+func (r *RecordTXT) GetType() string           { return dns.RS_TXT }
+func (r *RecordTXT) GetId() string             { return r.Ref }
+func (r *RecordTXT) GetDNSName() string        { return r.Name }
+func (r *RecordTXT) GetValue() string          { return raw.EnsureQuotedText(r.Text) }
+func (r *RecordTXT) GetTTL() int               { return int(r.Ttl) }
+func (r *RecordTXT) SetTTL(ttl int)            { r.Ttl = uint(ttl); r.UseTtl = ttl != 0 }
+func (r *RecordTXT) Copy() raw.Record          { n := *r; return &n }
+func (r *RecordTXT) PrepareUpdate() raw.Record { n := *r; n.Zone = ""; n.View = ""; return &n }
 
 var _ raw.Record = (*RecordA)(nil)
 var _ raw.Record = (*RecordCNAME)(nil)

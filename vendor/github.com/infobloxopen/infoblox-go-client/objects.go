@@ -370,25 +370,6 @@ func NewRecordPTR(rptr RecordPTR) *RecordPTR {
 	return &res
 }
 
-type RecordPTR struct {
-	IBBase   `json:"-"`
-	Ref      string `json:"_ref,omitempty"`
-	Ipv4Addr string `json:"ipv4addr,omitempty"`
-	Name     string `json:"name,omitempty"`
-	PtrdName string `json:"ptrdname,omitempty"`
-	View     string `json:"view,omitempty"`
-	Zone     string `json:"zone,omitempty"`
-	Ea       EA     `json:"extattrs,omitempty"`
-}
-
-func NewRecordPTR(rptr RecordPTR) *RecordPTR {
-	res := rptr
-	res.objectType = "record:ptr"
-	res.returnFields = []string{"extattrs", "ipv4addr", "ptrdname", "view", "zone"}
-
-	return &res
-}
-
 type RecordCNAME struct {
 	IBBase    `json:"-"`
 	Ref       string `json:"_ref,omitempty"`

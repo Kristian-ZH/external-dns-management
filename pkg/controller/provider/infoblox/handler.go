@@ -22,13 +22,13 @@ import (
 	"crypto/x509"
 	"encoding/json"
 	"fmt"
+	"net/url"
 	"reflect"
 	"strconv"
 
 	"github.com/gardener/controller-manager-library/pkg/logger"
 	"github.com/gardener/controller-manager-library/pkg/utils"
-	"golang.org/x/oauth2/google"
-	googledns "google.golang.org/api/dns/v1"
+	"github.com/pkg/errors"
 
 	"github.com/gardener/external-dns-management/pkg/dns"
 	"github.com/gardener/external-dns-management/pkg/dns/provider"
@@ -41,11 +41,9 @@ type Handler struct {
 	provider.ZoneCache
 	provider.DefaultDNSHandler
 	config         provider.DNSHandlerConfig
-	infobloxConfig InfobloxConfig
-	credentials    *google.Credentials
+	infobloxConfig *InfobloxConfig
 	access         *access
 	ctx            context.Context
-	service        *googledns.Service
 }
 
 type InfobloxConfig struct {
@@ -58,15 +56,16 @@ type InfobloxConfig struct {
 	RequestTimeout  *int    `json:"httpRequestTimeout,omitempty"`
 	CaCert          *string `json:"caCert,omitempty"`
 	MaxResults      int     `json:"maxResults,omitempty"`
+	ProxyUrl        *string `json:"proxyUrl,omitempty"`
 }
 
 var _ provider.DNSHandler = &Handler{}
 
 func NewHandler(config *provider.DNSHandlerConfig) (provider.DNSHandler, error) {
 
-	infobloxConfig := InfobloxConfig{}
+	infobloxConfig := &InfobloxConfig{}
 	if config.Config != nil {
-		err := json.Unmarshal(config.Config.Raw, &infobloxConfig)
+		err := json.Unmarshal(config.Config.Raw, infobloxConfig)
 		if err != nil {
 			return nil, fmt.Errorf("unmarshal infoblox providerConfig failed with: %s", err)
 		}
@@ -91,19 +90,22 @@ func NewHandler(config *provider.DNSHandlerConfig) (provider.DNSHandler, error) 
 	if err := config.FillRequiredProperty(&infobloxConfig.Version, "VERSION", "password"); err != nil {
 		return nil, err
 	}
-	if err := config.FillRequiredProperty(&infobloxConfig.View, "VIEW", "view"); err != nil {
+	if err := config.FillDefaultedProperty(&infobloxConfig.View, "default", "VIEW", "view"); err != nil {
 		return nil, err
 	}
 	if err := config.FillRequiredProperty(&infobloxConfig.Host, "HOST", "host"); err != nil {
 		return nil, err
 	}
-	if err := config.FillRequiredIntProperty(&infobloxConfig.Port, "PORT", "port"); err != nil {
+	if err := config.FillDefaultedIntProperty(&infobloxConfig.Port, 443, "PORT", "port"); err != nil {
 		return nil, err
 	}
 	if err := config.FillDefaultedIntProperty(&infobloxConfig.PoolConnections, 10, "HTTP_POOL_CONNECTIONS", "http_pool_connections"); err != nil {
 		return nil, err
 	}
 	if err := config.FillDefaultedIntProperty(&infobloxConfig.RequestTimeout, 60, "HTTP_REQUEST_TIMEOUT", "http_request_timeout"); err != nil {
+		return nil, err
+	}
+	if err := config.FillDefaultedProperty(&infobloxConfig.ProxyUrl, "", "PROXY_URL", "proxy_url"); err != nil {
 		return nil, err
 	}
 
@@ -126,6 +128,13 @@ func NewHandler(config *provider.DNSHandlerConfig) (provider.DNSHandler, error) 
 		*infobloxConfig.RequestTimeout,
 		*infobloxConfig.PoolConnections,
 	)
+	if infobloxConfig.ProxyUrl != nil && *infobloxConfig.ProxyUrl != "" {
+		u, err := url.Parse(*infobloxConfig.ProxyUrl)
+		if err != nil {
+			return nil, errors.Wrap(err, "parsing proxy url failed")
+		}
+		transportConfig.ProxyUrl = u
+	}
 
 	if infobloxConfig.CaCert != nil && verify == "true" {
 		caPool := x509.NewCertPool()
@@ -147,7 +156,7 @@ func NewHandler(config *provider.DNSHandlerConfig) (provider.DNSHandler, error) 
 
 	h.access = NewAccess(client, *h.infobloxConfig.View, config.Metrics)
 
-	h.ZoneCache, err = provider.NewZoneCache(config.CacheConfig, config.Metrics, nil, h.getZones, h.getZoneState)
+	h.ZoneCache, err = provider.NewZoneCache(*config.CacheConfig.CopyWithDisabledZoneStateCache(), config.Metrics, nil, h.getZones, h.getZoneState)
 	if err != nil {
 		return nil, err
 	}
@@ -171,8 +180,8 @@ func (h *Handler) getZones(cache provider.ZoneCache) (provider.DNSHostedZones, e
 	for _, z := range raw {
 		h.config.Metrics.AddRequests(provider.M_LISTRECORDS, 1)
 		var resN []RecordNS
-		objN := sdk.NewRecordNS(
-			sdk.RecordNS{
+		objN := ibclient.NewRecordNS(
+			ibclient.RecordNS{
 				Zone: z.Fqdn,
 				View: *h.infobloxConfig.View,
 			},
@@ -198,9 +207,9 @@ func (h *Handler) getZoneState(zone provider.DNSHostedZone, cache provider.ZoneC
 	rt := provider.M_LISTRECORDS
 
 	h.config.Metrics.AddRequests(rt, 1)
-	var resA []sdk.RecordA
-	objA := sdk.NewRecordA(
-		sdk.RecordA{
+	var resA []RecordA
+	objA := ibclient.NewRecordA(
+		ibclient.RecordA{
 			Zone: zone.Key(),
 			View: *h.infobloxConfig.View,
 		},
@@ -214,9 +223,9 @@ func (h *Handler) getZoneState(zone provider.DNSHostedZone, cache provider.ZoneC
 	}
 
 	h.config.Metrics.AddRequests(rt, 1)
-	var resC []sdk.RecordCNAME
-	objC := sdk.NewRecordCNAME(
-		sdk.RecordCNAME{
+	var resC []RecordCNAME
+	objC := ibclient.NewRecordCNAME(
+		ibclient.RecordCNAME{
 			Zone: zone.Key(),
 			View: *h.infobloxConfig.View,
 		},
@@ -230,9 +239,9 @@ func (h *Handler) getZoneState(zone provider.DNSHostedZone, cache provider.ZoneC
 	}
 
 	h.config.Metrics.AddRequests(rt, 1)
-	var resT []sdk.RecordTXT
-	objT := sdk.NewRecordTXT(
-		sdk.RecordTXT{
+	var resT []RecordTXT
+	objT := ibclient.NewRecordTXT(
+		ibclient.RecordTXT{
 			Zone: zone.Key(),
 			View: *h.infobloxConfig.View,
 		},
