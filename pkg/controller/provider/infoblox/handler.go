@@ -30,7 +30,6 @@ import (
 	"golang.org/x/oauth2/google"
 	googledns "google.golang.org/api/dns/v1"
 
-	"github.com/gardener/external-dns-management/pkg/controller/provider/infoblox/sdk"
 	"github.com/gardener/external-dns-management/pkg/dns"
 	"github.com/gardener/external-dns-management/pkg/dns/provider"
 	"github.com/gardener/external-dns-management/pkg/dns/provider/raw"
@@ -171,7 +170,7 @@ func (h *Handler) getZones(cache provider.ZoneCache) (provider.DNSHostedZones, e
 	zones := provider.DNSHostedZones{}
 	for _, z := range raw {
 		h.config.Metrics.AddRequests(provider.M_LISTRECORDS, 1)
-		var resN []sdk.RecordNS
+		var resN []RecordNS
 		objN := sdk.NewRecordNS(
 			sdk.RecordNS{
 				Zone: z.Fqdn,

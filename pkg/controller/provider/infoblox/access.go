@@ -65,14 +65,14 @@ func (this *access) DeleteRecord(r raw.Record) error {
 func (this *access) NewRecord(fqdn string, rtype string, value string, zone provider.DNSHostedZone, ttl int64) raw.Record {
 	switch rtype {
 	case dns.RS_A:
-		return &RecordA{
+		return &ibclient.RecordA{
 			Name:     fqdn,
 			Ipv4Addr: value,
 			Zone:     zone.Key(),
 			View:     this.view,
 		}
 	case dns.RS_CNAME:
-		return &RecordCNAME{
+		return &ibclient.RecordCNAME{
 			Name:      fqdn,
 			Canonical: value,
 			Zone:      zone.Key(),

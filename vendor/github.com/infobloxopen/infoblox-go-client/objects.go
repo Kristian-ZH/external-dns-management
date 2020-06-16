@@ -351,20 +351,21 @@ func NewUserProfile(userprofile UserProfile) *UserProfile {
 	return &res
 }
 
-type RecordA struct {
+type RecordPTR struct {
 	IBBase   `json:"-"`
 	Ref      string `json:"_ref,omitempty"`
 	Ipv4Addr string `json:"ipv4addr,omitempty"`
 	Name     string `json:"name,omitempty"`
+	PtrdName string `json:"ptrdname,omitempty"`
 	View     string `json:"view,omitempty"`
 	Zone     string `json:"zone,omitempty"`
 	Ea       EA     `json:"extattrs,omitempty"`
 }
 
-func NewRecordA(ra RecordA) *RecordA {
-	res := ra
-	res.objectType = "record:a"
-	res.returnFields = []string{"extattrs", "ipv4addr", "name", "view", "zone"}
+func NewRecordPTR(rptr RecordPTR) *RecordPTR {
+	res := rptr
+	res.objectType = "record:ptr"
+	res.returnFields = []string{"extattrs", "ipv4addr", "ptrdname", "view", "zone"}
 
 	return &res
 }
@@ -396,12 +397,14 @@ type RecordCNAME struct {
 	View      string `json:"view,omitempty"`
 	Zone      string `json:"zone,omitempty"`
 	Ea        EA     `json:"extattrs,omitempty"`
+	Ttl       uint   `json:"ttl,omitempty"`
+	UseTtl    bool   `json:"use_ttl,omitempty"`
 }
 
 func NewRecordCNAME(rc RecordCNAME) *RecordCNAME {
 	res := rc
 	res.objectType = "record:cname"
-	res.returnFields = []string{"extattrs", "canonical", "name", "view", "zone"}
+	res.returnFields = []string{"extattrs", "canonical", "name", "view", "zone", "ttl", "use_ttl"}
 
 	return &res
 }
@@ -447,16 +450,17 @@ type RecordTXT struct {
 	Ref    string `json:"_ref,omitempty"`
 	Name   string `json:"name,omitempty"`
 	Text   string `json:"text,omitempty"`
-	TTL    int    `json:"ttl,omitempty"`
+	Ttl    uint   `json:"ttl,omitempty"`
 	View   string `json:"view,omitempty"`
 	Zone   string `json:"zone,omitempty"`
 	Ea     EA     `json:"extattrs,omitempty"`
+	UseTtl bool   `json:"use_ttl,omitempty"`
 }
 
 func NewRecordTXT(rt RecordTXT) *RecordTXT {
 	res := rt
 	res.objectType = "record:txt"
-	res.returnFields = []string{"extattrs", "name", "text", "view", "zone"}
+	res.returnFields = []string{"extattrs", "name", "text", "view", "zone", "ttl", "use_ttl"}
 
 	return &res
 }

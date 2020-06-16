@@ -18,12 +18,13 @@
 package infoblox
 
 import (
-	"github.com/gardener/external-dns-management/pkg/controller/provider/infoblox/sdk"
+	ibclient "github.com/infobloxopen/infoblox-go-client"
+
 	"github.com/gardener/external-dns-management/pkg/dns"
 	"github.com/gardener/external-dns-management/pkg/dns/provider/raw"
 )
 
-type RecordA sdk.RecordA
+type RecordA ibclient.RecordA
 
 func (r *RecordA) GetType() string    { return dns.RS_A }
 func (r *RecordA) GetId() string      { return r.Ref }
@@ -33,17 +34,17 @@ func (r *RecordA) GetTTL() int        { return int(r.Ttl) }
 func (r *RecordA) SetTTL(ttl int)     { r.Ttl = uint(ttl) }
 func (r *RecordA) Copy() raw.Record   { n := *r; return &n }
 
-type RecordCNAME sdk.RecordCNAME
+type RecordCNAME ibclient.RecordCNAME
 
 func (r *RecordCNAME) GetType() string    { return dns.RS_CNAME }
 func (r *RecordCNAME) GetId() string      { return r.Ref }
 func (r *RecordCNAME) GetDNSName() string { return r.Name }
 func (r *RecordCNAME) GetValue() string   { return r.Canonical }
 func (r *RecordCNAME) GetTTL() int        { return int(r.Ttl) }
-func (r *RecordCNAME) SetTTL(ttl int)     { r.Ttl = uint(ttl) }
+func (r *RecordCNAME) SetTTL(ttl int)     { r.Ttl = ttl }
 func (r *RecordCNAME) Copy() raw.Record   { n := *r; return &n }
 
-type RecordTXT sdk.RecordTXT
+type RecordTXT ibclient.RecordTXT
 
 func (r *RecordTXT) GetType() string    { return dns.RS_TXT }
 func (r *RecordTXT) GetId() string      { return r.Ref }
@@ -56,3 +57,5 @@ func (r *RecordTXT) Copy() raw.Record   { n := *r; return &n }
 var _ raw.Record = (*RecordA)(nil)
 var _ raw.Record = (*RecordCNAME)(nil)
 var _ raw.Record = (*RecordTXT)(nil)
+
+type RecordNS ibclient.RecordNS
