@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
+	"reflect"
 	"strings"
 	"time"
 
@@ -283,12 +284,14 @@ func (c *Connector) GetObject(obj IBObject, ref string, res interface{}) (err er
 	queryParams := QueryParams{forceProxy: false}
 	resp, err := c.makeRequest(GET, obj, ref, queryParams)
 	//to check empty underlying value of interface
-	var result []map[string]interface{}
+	var result interface{}
 	err = json.Unmarshal(resp, &result)
 	if err != nil {
 		log.Printf("Cannot unmarshall to check empty value '%s', err: '%s'\n", string(resp), err)
 	}
-	if resp == nil || len(result) == 0 {
+
+	var data []interface{}
+	if resp == nil || (reflect.TypeOf(result) == reflect.TypeOf(data) && len(result.([]interface{})) == 0) {
 		queryParams.forceProxy = true
 		resp, err = c.makeRequest(GET, obj, ref, queryParams)
 	}
@@ -299,7 +302,6 @@ func (c *Connector) GetObject(obj IBObject, ref string, res interface{}) (err er
 		return
 	}
 	err = json.Unmarshal(resp, res)
-
 	if err != nil {
 		log.Printf("Cannot unmarshall '%s', err: '%s'\n", string(resp), err)
 		return

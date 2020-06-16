@@ -16,8 +16,8 @@ require (
 	github.com/gophercloud/gophercloud v0.2.0
 	github.com/gophercloud/utils v0.0.0-20190527093828-25f1b77b8c03
 	github.com/imdario/mergo v0.3.7 // indirect
+	github.com/infobloxopen/infoblox-go-client v1.1.0
 	github.com/konsorten/go-windows-terminal-sequences v1.0.2 // indirect
-	github.com/infobloxopen/infoblox-go-client v0.8.0
 	github.com/mailru/easyjson v0.0.0-20190626092158-b2ccc519800e // indirect
 	github.com/mattn/go-isatty v0.0.12 // indirect
 	github.com/miekg/dns v1.1.14
